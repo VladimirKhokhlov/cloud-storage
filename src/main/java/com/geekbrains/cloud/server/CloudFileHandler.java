@@ -1,5 +1,7 @@
 package com.geekbrains.cloud.server;
 
+import javafx.scene.control.ListView;
+
 import java.io.*;
 import java.net.Socket;
 
@@ -11,6 +13,7 @@ public class CloudFileHandler implements Runnable {
     private DataOutputStream os;
     private byte[] buf;
     private File serverDirectory;
+    public ListView<String> serverView;
 
     public CloudFileHandler(Socket socket) throws IOException {
         this.socket = socket;
@@ -39,6 +42,27 @@ public class CloudFileHandler implements Runnable {
                     System.out.println("Fie: " + name + " is uploaded");
                 } else {
                     System.err.println("Unknown command: " + command);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            while (true) {
+                String item = serverView.getSelectionModel().getSelectedItem();
+                File selected = serverDirectory.toPath().resolve(item).toFile();
+                if (selected.isFile()) {
+                    os.writeUTF("#file_message#");
+                    os.writeUTF(selected.getName());
+                    os.writeLong(selected.length());
+                    try (InputStream fis = new FileInputStream(selected)) {
+                        while (fis.available() > 0) {
+                            int readBytes = fis.read(buf);
+                            os.write(buf, 0, readBytes);
+                        }
+                    }
+                    os.flush();
                 }
             }
         } catch (Exception e) {
