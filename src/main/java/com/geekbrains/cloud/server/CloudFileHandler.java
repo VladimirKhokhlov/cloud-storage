@@ -27,7 +27,7 @@ public class CloudFileHandler implements Runnable {
     @Override
     public void run() {
         try {
-            while (true) {
+            while (!socket.isClosed()) {
                 String command = is.readUTF();
                 if ("#file_message#".equals(command)) {
                     String name = is.readUTF();
@@ -47,25 +47,22 @@ public class CloudFileHandler implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+        String item = serverView.getSelectionModel().getSelectedItem();
+        File selected = serverDirectory.toPath().resolve(item).toFile();
         try {
-            while (true) {
-                String item = serverView.getSelectionModel().getSelectedItem();
-                File selected = serverDirectory.toPath().resolve(item).toFile();
-                if (selected.isFile()) {
-                    os.writeUTF("#file_message#");
-                    os.writeUTF(selected.getName());
-                    os.writeLong(selected.length());
-                    try (InputStream fis = new FileInputStream(selected)) {
-                        while (fis.available() > 0) {
-                            int readBytes = fis.read(buf);
-                            os.write(buf, 0, readBytes);
-                        }
+            if (selected.isFile()) {
+                os.writeUTF("#file_message#");
+                os.writeUTF(selected.getName());
+                os.writeLong(selected.length());
+                try (InputStream fis = new FileInputStream(selected)) {
+                    while (fis.available() > 0) {
+                        int readBytes = fis.read(buf);
+                        os.write(buf, 0, readBytes);
                     }
-                    os.flush();
                 }
+                os.flush();
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

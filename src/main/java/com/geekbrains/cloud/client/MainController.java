@@ -47,24 +47,22 @@ public class MainController implements Initializable {
 
     public void download(ActionEvent actionEvent) {
         try {
-            while (true) {
-                String command = is.readUTF();
-                if ("#file_message#".equals(command)) {
-                    String name = is.readUTF();
-                    long size = is.readLong();
-                    File newFle = clientDirectory.toPath().resolve(name).toFile();
-                    try (OutputStream fos = new FileOutputStream(newFle)) {
-                        for (int i = 0; i < (size + BUFFER_SIZE - 1) / BUFFER_SIZE; i++) {
-                            int readCount = is.read(buf);
-                            fos.write(buf, 0, readCount);
-                        }
+            String command = is.readUTF();
+            if ("#file_message#".equals(command)) {
+                String name = is.readUTF();
+                long size = is.readLong();
+                File newFle = currentDirectory.toPath().resolve(name).toFile();
+                try (OutputStream fos = new FileOutputStream(newFle)) {
+                    for (int i = 0; i < (size + BUFFER_SIZE - 1) / BUFFER_SIZE; i++) {
+                        int readCount = is.read(buf);
+                        fos.write(buf, 0, readCount);
                     }
-                    System.out.println("Fie: " + name + " is uploaded");
-                    updateServerView();
-                    updateClientView();
-                } else {
-                    System.err.println("Unknown command: " + command);
                 }
+                System.out.println("Fie: " + name + " is uploaded");
+                updateServerView();
+                updateClientView();
+            } else {
+                System.err.println("Unknown command: " + command);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -85,9 +83,9 @@ public class MainController implements Initializable {
                 }
             }
             os.flush();
+        }
             updateServerView();
             updateClientView();
-        }
     }
 
     private void initNetwork() {
@@ -130,7 +128,7 @@ public class MainController implements Initializable {
                     serverDirectory = serverDirectory.getParentFile();
                     updateServerView();
                 } else {
-                    File selected =  serverDirectory.toPath().resolve(item).toFile();
+                    File selected = serverDirectory.toPath().resolve(item).toFile();
                     if (selected.isDirectory()) {
                         serverDirectory = selected;
                         updateServerView();
