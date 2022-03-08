@@ -14,6 +14,7 @@ import java.util.ResourceBundle;
 public class MainController implements Initializable {
 
     private File currentDirectory;
+    private File serverDirectory;
     private static final int BUFFER_SIZE = 8192;
 
     public TextField serverPath;
@@ -24,6 +25,7 @@ public class MainController implements Initializable {
     private DataInputStream is;
     private DataOutputStream os;
     private byte[] buf;
+    private File clientDirectory;
 
     private void updateClientView() {
         Platform.runLater(() -> {
@@ -34,7 +36,38 @@ public class MainController implements Initializable {
         });
     }
 
+    private void updateServerView() {
+        Platform.runLater(() -> {
+            serverPath.setText(serverDirectory.getAbsolutePath());
+            serverView.getItems().clear();
+            serverView.getItems().add("...");
+            serverView.getItems().addAll(serverDirectory.list());
+        });
+    }
+
     public void download(ActionEvent actionEvent) {
+        try {
+            String command = is.readUTF();
+            if ("#file_message#".equals(command)) {
+                String name = is.readUTF();
+                long size = is.readLong();
+                File newFle = currentDirectory.toPath().resolve(name).toFile();
+                try (OutputStream fos = new FileOutputStream(newFle)) {
+                    for (int i = 0; i < (size + BUFFER_SIZE - 1) / BUFFER_SIZE; i++) {
+                        int readCount = is.read(buf);
+                        fos.write(buf, 0, readCount);
+                    }
+                }
+                is.readInt();
+                System.out.println("Fie: " + name + " is uploaded");
+                updateServerView();
+                updateClientView();
+            } else {
+                System.err.println("Unknown command: " + command);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void upload(ActionEvent actionEvent) throws IOException {
@@ -52,6 +85,8 @@ public class MainController implements Initializable {
             }
             os.flush();
         }
+            updateServerView();
+            updateClientView();
     }
 
     private void initNetwork() {
@@ -68,7 +103,9 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         currentDirectory = new File(System.getProperty("user.home"));
+        serverDirectory = new File("server");
         updateClientView();
+        updateServerView();
         initNetwork();
         clientView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
@@ -81,6 +118,21 @@ public class MainController implements Initializable {
                     if (selected.isDirectory()) {
                         currentDirectory = selected;
                         updateClientView();
+                    }
+                }
+            }
+        });
+        serverView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                String item = serverView.getSelectionModel().getSelectedItem();
+                if (item.equals("...")) {
+                    serverDirectory = serverDirectory.getParentFile();
+                    updateServerView();
+                } else {
+                    File selected = serverDirectory.toPath().resolve(item).toFile();
+                    if (selected.isDirectory()) {
+                        serverDirectory = selected;
+                        updateServerView();
                     }
                 }
             }
