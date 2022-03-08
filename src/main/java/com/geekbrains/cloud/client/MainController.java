@@ -58,6 +58,7 @@ public class MainController implements Initializable {
                         fos.write(buf, 0, readCount);
                     }
                 }
+                is.readInt();
                 System.out.println("Fie: " + name + " is uploaded");
                 updateServerView();
                 updateClientView();

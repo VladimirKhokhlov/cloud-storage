@@ -27,7 +27,7 @@ public class CloudFileHandler implements Runnable {
     @Override
     public void run() {
         try {
-            while (!socket.isClosed()) {
+//            while (!socket.isClosed()) {
                 String command = is.readUTF();
                 if ("#file_message#".equals(command)) {
                     String name = is.readUTF();
@@ -43,7 +43,7 @@ public class CloudFileHandler implements Runnable {
                 } else {
                     System.err.println("Unknown command: " + command);
                 }
-            }
+//            }
         } catch (Exception e) {
             e.printStackTrace();
         }
